@@ -69,6 +69,32 @@ button.sm{padding:7px 10px;font-size:13px;}
 footer.site{padding:18px;text-align:center;font-size:12px;color:var(--muted);}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:.3s;z-index:50;}
 .toast.show{opacity:1;}
+
+/* 介紹區 */
+.intro{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px 24px;margin:0 auto 22px;max-width:1100px;box-shadow:0 4px 18px rgba(40,30,10,.06);}
+.intro-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.intro-head h2{margin:0;font-size:24px;}
+.intro-head h2 span{color:var(--orange);}
+.intro-head .tag2{background:var(--soft);color:var(--teal);font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;}
+.intro-head button{margin-left:auto;}
+.intro-lead{font-size:16px;line-height:1.8;margin:12px 0 16px;color:#2c4a52;}
+.intro-grid{display:grid;grid-template-columns:1.05fr 1fr 1.15fr;gap:16px;}
+.icard{border-radius:14px;padding:16px 16px 14px;background:var(--bg);border:1px solid var(--line);}
+.icard h4{margin:0 0 8px;font-size:17px;display:flex;align-items:center;gap:8px;}
+.icard h4 i{font-style:normal;display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;color:#fff;font-size:14px;}
+.icard p{margin:0 0 8px;font-size:14.5px;line-height:1.75;}
+.icard ul{margin:4px 0 0;padding-left:18px;font-size:14.5px;line-height:1.75;}
+.icard li{margin-bottom:4px;}
+.icard b{color:var(--ink);}
+.fig{display:flex;justify-content:center;margin:4px 0 8px;}
+.fig svg{width:100%;max-width:240px;height:auto;}
+.formula{background:#fff;border:1px dashed #E2D7C5;border-radius:10px;padding:8px 10px;font-size:14px;line-height:1.7;margin-top:6px;}
+.steps{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+.step{flex:1 1 200px;background:var(--soft);border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.6;}
+.step b{display:block;color:var(--orange);font-size:15px;margin-bottom:2px;}
+.intro.mini .intro-body{display:none;}
+@media (max-width:1100px){.intro-grid{grid-template-columns:1fr 1fr;}.intro-grid .icard:last-child{grid-column:1 / -1;}}
+@media (max-width:700px){.intro{padding:16px;}.intro-head h2{font-size:20px;}.intro-grid{grid-template-columns:1fr;}.intro-lead{font-size:15px;}}
 .mobile-toggle{display:none;}
 /* 動畫視窗 */
 .modal{position:fixed;inset:0;background:rgba(18,52,59,.92);display:none;z-index:40;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;}
@@ -87,7 +113,7 @@ footer.site{padding:18px;text-align:center;font-size:12px;color:var(--muted);}
 @media print{
   @page{size:A4 portrait;margin:0;}
   body{background:#fff;}
-  header.top,aside,.scalebar,footer.site,.toast,.pagewrap .tag,.modal,.cellhit{display:none !important;}
+  header.top,aside,.scalebar,footer.site,.toast,.pagewrap .tag,.modal,.cellhit,.intro{display:none !important;}
   main{display:block;min-height:0;}
   section.preview{padding:0;overflow:visible;}
   .pages{display:block;}
@@ -106,6 +132,7 @@ footer.site{padding:18px;text-align:center;font-size:12px;color:var(--muted);}
   </div>
   <div class="actions">
     <button class="ghost" onclick="regen(true)">🔀 全部換一組</button>
+    <button class="ghost" onclick="showIntro()">❓ 這是什麼</button>
     <button class="ghost" onclick="openAnim()">▶ 動畫示範</button>
     <button class="teal" id="pptBtn" onclick="downloadPPT()">下載 PPT</button>
     <button class="teal" id="pdfBtn" onclick="downloadPDF()">下載 PDF</button>
@@ -209,6 +236,50 @@ footer.site{padding:18px;text-align:center;font-size:12px;color:var(--muted);}
 </aside>
 
 <section class="preview">
+  <div class="intro" id="intro">
+    <div class="intro-head">
+      <h2>什麼是<span>繁花曲線</span>？</h2>
+      <span class="tag2">很多人小時候玩過的「萬花尺」</span>
+      <button class="ghost sm" id="introToggle" onclick="toggleIntro()">收起介紹</button>
+    </div>
+    <div class="intro-body">
+      <p class="intro-lead">還記得那種有齒輪的塑膠圓片嗎？把小圓片放進大圓圈裡，筆尖插進小圓片上的小洞，沿著大圓一圈一圈地轉，紙上就會慢慢長出一朵左右對稱的花。這種<b>「一個圓沿著另一個圓滾動時，圓上某一點留下的軌跡」</b>，就叫做繁花曲線。它是一種從 1960 年代開始流行的畫圖玩具，也是許多人共同的童年回憶。</p>
+      <div class="intro-grid">
+        <div class="icard">
+          <h4><i style="background:var(--teal)">1</i>它是怎麼畫出來的？</h4>
+          <div class="fig" id="introFig"></div>
+          <p>大圓（虛線）固定不動，小圓（青色）貼著大圓的內側滾動，筆（橘點）插在小圓裡面某個位置。小圓一邊繞著大圓走、一邊自己轉，筆就畫出了花瓣。</p>
+          <p>小圓在大圓<b>裡面</b>滾，叫「內滾」（數學上稱內擺線）；在大圓<b>外面</b>滾，叫「外滾」（外擺線），會畫出向外鼓起的花邊。</p>
+        </div>
+        <div class="icard">
+          <h4><i style="background:var(--orange)">2</i>三個數字決定一朵花</h4>
+          <ul>
+            <li><b>R：大圓的齒數</b>（大圓有多大）</li>
+            <li><b>r：小圓的齒數</b>（小圓有多大）</li>
+            <li><b>d：筆孔離小圓中心多遠</b>（越遠花瓣越尖，越近越接近圓形）</li>
+          </ul>
+          <div class="formula">花瓣數 ＝ R ÷（R 和 r 的最大公因數）<br>小圓要繞的圈數 ＝ r ÷（R 和 r 的最大公因數）</div>
+          <p style="margin-top:8px">例如 R＝96、r＝36，兩者的最大公因數是 12，所以會畫出 <b>96÷12＝8 瓣</b>的花，小圓要繞 <b>36÷12＝3 圈</b>才會回到起點。換一個數字，就是完全不同的一朵花。</p>
+        </div>
+        <div class="icard">
+          <h4><i style="background:var(--amber);color:var(--ink)">3</i>為什麼做這個生成器？</h4>
+          <p>真正的萬花尺要一手壓住大圓、一手轉動小圓，力道一不穩齒輪就會滑掉，整張圖就毀了。對手部力量或協調比較弱的長輩、剛開始學握筆的孩子來說，常常畫到一半就失敗，留下的是挫折感。</p>
+          <p>所以我先把花「畫好」，讓大家把力氣留給自己想做的部分：</p>
+          <ul>
+            <li><b>描線版</b>：沿著淺灰的線慢慢描，專心在手的穩定與速度</li>
+            <li><b>上色版</b>：線條交錯切出許多小格子，每一格都能選不同顏色，練習規劃與耐心</li>
+            <li><b>動畫示範</b>：投影給大家看圓怎麼滾出花，先引起好奇，再動手</li>
+            <li><b>卡片、書籤、貼紙</b>：4／6／9 格版面，完成的作品可以帶回家或送人</li>
+          </ul>
+        </div>
+      </div>
+      <div class="steps">
+        <div class="step"><b>帶活動小提示 ①</b>先按「▶ 動畫示範」，讓大家猜：「這朵花會有幾瓣？」</div>
+        <div class="step"><b>帶活動小提示 ②</b>依照每個人的狀況選描線版或上色版，同一張紙也能有人描、有人塗。</div>
+        <div class="step"><b>帶活動小提示 ③</b>完成後互相分享：喜歡哪個顏色、哪一瓣最難畫，作品可以裝框或做成卡片。</div>
+      </div>
+    </div>
+  </div>
   <div class="scalebar">
     <span>預覽縮放</span><input type="range" id="zoom" min="25" max="100" value="60"><span id="zoomVal">60%</span>
     <span style="margin-left:auto" id="pageInfo"></span>
@@ -476,6 +547,29 @@ $('importFile').addEventListener('change',e=>{if(e.target.files[0])importLib(e.t
 $('zoom').addEventListener('input',applyZoom);
 if(window.innerWidth<900){$('zoom').value=Math.min(60,Math.floor((window.innerWidth-50)/(210*3.7795)*100));$('aside').classList.add('collapsed');}
 buildPages(false);render();
+
+/* ---------- 介紹區 ---------- */
+function drawIntroFig(){
+  const R=96,r=36,d=30,S=1.05,cx=120,cy=120;const k=(R-r)/r,a=R-r;const t0=0.55;
+  const pts=[];for(let i=0;i<=1440;i++){const t=i/1440*2*Math.PI*3;pts.push([cx+(a*Math.cos(t)+d*Math.cos(k*t))*S,cy+(a*Math.sin(t)-d*Math.sin(k*t))*S]);}
+  const wx=cx+a*Math.cos(t0)*S,wy=cy+a*Math.sin(t0)*S;const px=cx+(a*Math.cos(t0)+d*Math.cos(k*t0))*S,py=cy+(a*Math.sin(t0)-d*Math.sin(k*t0))*S;
+  const f='font-family="Microsoft JhengHei, PingFang TC, Noto Sans TC, sans-serif" font-weight="700" stroke="#fff" stroke-width="3.5" paint-order="stroke"';
+  $('introFig').innerHTML=`<svg viewBox="0 0 240 240" role="img" aria-label="大圓、小圓與筆的示意圖">
+    <polyline points="${pts.map(q=>F(q[0])+','+F(q[1])).join(' ')}" fill="none" stroke="#F4A93C" stroke-width="1.3" opacity=".55"/>
+    <circle cx="${cx}" cy="${cy}" r="${R*S}" fill="none" stroke="#9A918A" stroke-width="2" stroke-dasharray="5 4"/>
+    <circle cx="${F(wx)}" cy="${F(wy)}" r="${r*S}" fill="rgba(2,128,144,.08)" stroke="#028090" stroke-width="2.5"/>
+    <line x1="${F(wx)}" y1="${F(wy)}" x2="${F(px)}" y2="${F(py)}" stroke="#E8552D" stroke-width="2"/>
+    <circle cx="${F(wx)}" cy="${F(wy)}" r="3" fill="#028090"/><circle cx="${F(px)}" cy="${F(py)}" r="5.5" fill="#E8552D"/>
+    <text x="${cx}" y="${cy-R*S+16}" text-anchor="middle" font-size="13" fill="#7A7068" ${f}>大圓 R</text>
+    <text x="${F(wx)}" y="${F(wy+r*S-8)}" text-anchor="middle" font-size="12" fill="#028090" ${f}>小圓 r</text>
+    <text x="${F((wx+px)/2-9)}" y="${F((wy+py)/2+2)}" text-anchor="middle" font-size="13" fill="#E8552D" ${f}>d</text>
+    <text x="${F(px+4)}" y="${F(py-9)}" font-size="13" fill="#E8552D" ${f}>筆</text></svg>`;
+}
+function setIntro(open){$('intro').classList.toggle('mini',!open);$('introToggle').textContent=open?'收起介紹':'展開介紹：繁花曲線是什麼？';try{localStorage.setItem('spiro-intro',open?'1':'0');}catch(e){}}
+function toggleIntro(){setIntro($('intro').classList.contains('mini'));}
+function showIntro(){setIntro(true);$('intro').scrollIntoView({behavior:'smooth',block:'start'});}
+drawIntroFig();
+try{if(localStorage.getItem('spiro-intro')==='0')setIntro(false);}catch(e){}
 </script>
 </body>
 </html>

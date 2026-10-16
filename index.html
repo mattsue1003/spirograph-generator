@@ -49,6 +49,21 @@ input[type=range]{width:100%;accent-color:var(--orange);}
 .scalebar{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);margin-bottom:14px;flex-wrap:wrap;}
 .scalebar input{width:160px;}
 .custom{display:none;}
+.selbox{background:var(--soft);border:1px solid #F3DFC2;border-radius:12px;padding:10px 12px;margin-top:10px;font-size:14px;}
+.selbox b{color:var(--orange);}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+button.sm{padding:7px 10px;font-size:13px;}
+.savebox{display:flex;gap:6px;margin:12px 0 4px;}
+.savebox input{flex:1;}
+.pbtn{position:relative;}
+.pbtn .del{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--ink);color:#fff;font-size:12px;line-height:20px;display:none;}
+.pbtn:hover .del,.pbtn.active .del{display:block;}
+.page{position:relative;}
+.cellhit{position:absolute;border-radius:4mm;cursor:pointer;border:2px solid transparent;transition:.15s;}
+.cellhit:hover{border-color:rgba(232,85,45,.35);background:rgba(244,169,60,.06);}
+.cellhit.sel{border:3px dashed var(--orange);background:rgba(244,169,60,.08);}
+.cellhit .badge{position:absolute;top:2mm;left:2mm;background:var(--orange);color:#fff;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;display:none;}
+.cellhit.sel .badge{display:block;}
 .custom.show{display:block;}
 .info{background:var(--soft);border-radius:10px;padding:8px 12px;font-size:13px;margin-top:8px;line-height:1.6;}
 footer.site{padding:18px;text-align:center;font-size:12px;color:var(--muted);}
@@ -72,7 +87,7 @@ footer.site{padding:18px;text-align:center;font-size:12px;color:var(--muted);}
 @media print{
   @page{size:A4 portrait;margin:0;}
   body{background:#fff;}
-  header.top,aside,.scalebar,footer.site,.toast,.pagewrap .tag,.modal{display:none !important;}
+  header.top,aside,.scalebar,footer.site,.toast,.pagewrap .tag,.modal,.cellhit{display:none !important;}
   main{display:block;min-height:0;}
   section.preview{padding:0;overflow:visible;}
   .pages{display:block;}
@@ -90,7 +105,7 @@ footer.site{padding:18px;text-align:center;font-size:12px;color:var(--muted);}
     <p>一個圓在另一個圓裡滾動，就滾出一朵花：描線、上色、送人都好看</p>
   </div>
   <div class="actions">
-    <button class="ghost" onclick="regen(true)">🔀 換一組</button>
+    <button class="ghost" onclick="regen(true)">🔀 全部換一組</button>
     <button class="ghost" onclick="openAnim()">▶ 動畫示範</button>
     <button class="teal" id="pptBtn" onclick="downloadPPT()">下載 PPT</button>
     <button class="teal" id="pdfBtn" onclick="downloadPDF()">下載 PDF</button>
@@ -105,17 +120,37 @@ footer.site{padding:18px;text-align:center;font-size:12px;color:var(--muted);}
   <div class="panel">
 
   <div class="group">
-    <h3><span class="n">1</span>圖案</h3>
-    <div class="seg" id="modeSeg">
-      <button data-v="preset" class="on">圖庫</button><button data-v="random">隨機</button><button data-v="custom">自訂</button>
+    <h3><span class="n">1</span>版面與正在編輯的格子</h3>
+    <div class="seg" id="layoutSeg">
+      <button data-v="1" class="on">1 大圖</button><button data-v="4">4 格</button><button data-v="6">6 格</button><button data-v="9">9 格</button>
+    </div>
+    <div class="selbox">
+      <div>正在編輯：<b id="selLabel">第 1 張・第 1 格</b></div>
+      <p class="hint" style="margin:2px 0 0">點右邊預覽裡的任何一格，就能單獨修改那一格；下面選的圖案、滑桿、隨機，都只改這一格。</p>
+      <div class="btnrow">
+        <button class="ghost sm" onclick="randomSel()">🎲 這格隨機</button>
+        <button class="ghost sm" onclick="applyAll()">套用到全部格子</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="group">
+    <h3><span class="n">2</span>圖案</h3>
+    <div class="seg" id="tabSeg">
+      <button data-v="preset" class="on">內建圖庫</button><button data-v="mine">我的圖庫</button><button data-v="custom">自訂</button>
     </div>
     <div id="presetBox" style="margin-top:10px"><div class="preset-grid" id="presetGrid"></div></div>
-    <div id="randomBox" class="custom">
-      <label class="row"><span class="k">複雜度</span></label>
-      <div class="seg" id="diffSeg"><button data-v="1">簡單</button><button data-v="2" class="on">中等</button><button data-v="3">複雜</button></div>
-      <p class="hint">簡單＝花瓣少、線條少，適合描線；複雜＝花瓣密、適合欣賞與上色。按「換一組」就換新花。</p>
+    <div id="mineBox" class="custom" style="margin-top:10px">
+      <div class="preset-grid" id="mineGrid"></div>
+      <p class="hint" id="mineEmpty">還沒有存檔。到「自訂」調出喜歡的花，按「存到我的圖庫」就會出現在這裡。</p>
+      <div class="btnrow">
+        <button class="ghost sm" onclick="exportLib()">匯出備份</button>
+        <button class="ghost sm" onclick="$('importFile').click()">匯入</button>
+        <input type="file" id="importFile" accept=".json,application/json" style="display:none">
+      </div>
+      <p class="hint">存檔放在這台裝置的瀏覽器裡；換電腦或手機時，先「匯出備份」，再到新裝置「匯入」即可。也可以把備份檔傳給同事共用。</p>
     </div>
-    <div id="customBox" class="custom">
+    <div id="customBox" class="custom" style="margin-top:10px">
       <label class="row"><span class="k">滾動方式</span></label>
       <div class="seg" id="kindSeg"><button data-v="hypo" class="on">內滾（內擺線）</button><button data-v="epi">外滾（外擺線）</button></div>
       <label class="row"><span class="k">大圓齒數 R</span><span id="Rv">96</span></label><input type="range" id="R" min="60" max="150" value="96">
@@ -123,10 +158,17 @@ footer.site{padding:18px;text-align:center;font-size:12px;color:var(--muted);}
       <label class="row"><span class="k">筆孔距離 d</span><span id="dv">30</span></label><input type="range" id="d" min="2" max="120" value="30">
       <div class="info" id="info"></div>
     </div>
+    <div class="savebox">
+      <input type="text" id="saveName" placeholder="幫這朵花取個名字（例如：班上的向日葵）" maxlength="16">
+      <button class="primary sm" onclick="saveToLib()">存到我的圖庫</button>
+    </div>
+    <label class="row"><span class="k">隨機的複雜度</span></label>
+    <div class="seg" id="diffSeg"><button data-v="1">簡單</button><button data-v="2" class="on">中等</button><button data-v="3">複雜</button></div>
+    <p class="hint">簡單＝花瓣少、線條少，適合描線；複雜＝花瓣密，適合欣賞與上色。</p>
   </div>
 
   <div class="group">
-    <h3><span class="n">2</span>線條與色彩</h3>
+    <h3><span class="n">3</span>線條與色彩</h3>
     <div class="seg" id="styleSeg">
       <button data-v="trace">描線（淺灰）</button><button data-v="ink" class="on">線稿（上色用）</button><button data-v="color">彩色</button>
     </div>
@@ -140,18 +182,15 @@ footer.site{padding:18px;text-align:center;font-size:12px;color:var(--muted);}
   </div>
 
   <div class="group">
-    <h3><span class="n">3</span>版面</h3>
-    <div class="seg" id="layoutSeg">
-      <button data-v="1" class="on">1 大圖</button><button data-v="4">4 格</button><button data-v="6">6 格</button><button data-v="9">9 格</button>
-    </div>
-    <label class="check"><input type="checkbox" id="vary" checked>多格時每格不同花（隨機）</label>
-    <label class="row"><span class="k">圖案大小</span><span id="sizeVal">170 mm</span></label>
+    <h3><span class="n">4</span>大小與新格子</h3>
+    <label class="check"><input type="checkbox" id="vary" checked>新增的格子自動放不同的花（隨機）</label>
+    <label class="row"><span class="k">圖案大小（1 大圖）</span><span id="sizeVal">170 mm</span></label>
     <input type="range" id="size" min="110" max="185" value="170">
     <p class="hint">4 格＝卡片、6 格＝書籤或貼紙、9 格＝小貼紙／吊飾；格數多時大小會自動配合。</p>
   </div>
 
   <div class="group">
-    <h3><span class="n">4</span>頁面文字</h3>
+    <h3><span class="n">5</span>頁面文字</h3>
     <label class="row"><span class="k">標題</span></label>
     <input type="text" id="title" value="繁花曲線" maxlength="20">
     <label class="row"><span class="k">說明文字</span></label>
@@ -163,8 +202,8 @@ footer.site{padding:18px;text-align:center;font-size:12px;color:var(--muted);}
   </div>
 
   <div class="group">
-    <h3><span class="n">5</span>輸出說明</h3>
-    <p class="hint">「列印」直接出 A4；「下載 PDF」存檔分享；「下載 PPT」文字可編輯、圖可移動；「SVG」可進 Canva、Illustrator 改色或做成貼紙刀模。「動畫示範」可投影給學員看圓怎麼滾出花。</p>
+    <h3><span class="n">6</span>輸出說明</h3>
+    <p class="hint">「列印」直接出 A4；「下載 PDF」存檔分享；「下載 PPT」文字可編輯、圖可移動；「SVG」可進 Canva、Illustrator 改色或做成貼紙刀模。「動畫示範」播放正在編輯的那一格，可投影給學員看圓怎麼滾出花。</p>
   </div>
   </div>
 </aside>
@@ -276,7 +315,7 @@ function pageSvg(items,cfg,idx,total){
   for(const it of items){
     if(it.cell.box){const [x,y,w,h]=it.cell.box;art+=`<rect x="${F(x)}" y="${F(y)}" width="${F(w)}" height="${F(h)}" rx="4" fill="none" stroke="#E6DED2" stroke-width=".4" stroke-dasharray="2 1.5"/>`;}
     art+=renderSpiro(it.params,{cx:it.cell.cx,cy:it.cell.cy,size:it.cell.size,style:cfg.style,sw:cfg.sw,layers:cfg.layers,palette:cfg.palette,ring:cfg.ring});
-    if(items.length>1){const c=curve(it.params);art+=`<text x="${F(it.cell.cx)}" y="${F(it.cell.cy+it.cell.size/2+4.2)}" text-anchor="middle" font-size="3.2" fill="#9A918A" ${FONT}>${it.params.kind==='hypo'?'內滾':'外滾'} R${it.params.R}·r${it.params.r}·d${it.params.d}　${c.lobes} 瓣</text>`;}
+    if(items.length>1){const c=curve(it.params);art+=`<text x="${F(it.cell.cx)}" y="${F(it.cell.cy+it.cell.size/2+4.2)}" text-anchor="middle" font-size="3.2" fill="#9A918A" ${FONT}>${it.params.name?esc(it.params.name)+'　':''}${it.params.kind==='hypo'?'內滾':'外滾'} R${it.params.R}·r${it.params.r}·d${it.params.d}　${c.lobes} 瓣</text>`;}
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm"><rect width="210" height="297" fill="#fff"/>${corner}${head}${art}${foot}</svg>`;
 }
@@ -288,39 +327,61 @@ function artOnlySvg(items,cfg){
 }
 
 /* ---------- 狀態 ---------- */
-const state={mode:'preset',preset:5,diff:2,kind:'hypo',style:'ink',layout:1,seed:Date.now()%100000};
+const state={tab:'preset',diff:2,kind:'hypo',style:'ink',layout:1,seed:Date.now()%100000,pages:[],sel:{p:0,c:0}};
 const pagesData=[];
+let rng=mulberry32(state.seed);
 function cfg(){return{size:+$('size').value,sw:[0,.3,.5,.75,1.05,1.4][+$('sw').value],style:state.style,layers:+$('layers').value,palette:$('palette').value,ring:$('ring').checked,title:$('title').value||'繁花曲線',subtitle:$('subtitle').value,nameLine:$('nameLine').checked,footer:$('footer').value,count:Math.min(20,Math.max(1,+$('count').value||1)),vary:$('vary').checked,layout:state.layout};}
+const same=(a,b)=>a&&b&&a.kind===b.kind&&a.R===b.R&&a.r===b.r&&a.d===b.d;
+const pick=p=>({kind:p.kind,R:+p.R,r:+p.r,d:+p.d,name:p.name||''});
 
 function randomParams(rng,diff){
   const Rs=[96,105];for(let tries=0;tries<200;tries++){const R=Rs[Math.floor(rng()*2)];const kind=rng()<0.75?'hypo':'epi';
     let r=Math.round(12+rng()*(kind==='hypo'?R*0.9-12:60));const g=gcd(R,r);const loops=r/g,lobes=R/g;
     const ok=diff===1?(loops<=4&&lobes<=8):diff===2?(loops<=9&&lobes<=16):(loops>=5);
-    if(!ok)continue;const d=Math.round(r*(0.55+rng()*0.55));return {kind,R,r,d};}
-  return {kind:'hypo',R:96,r:36,d:30};
+    if(!ok)continue;const d=Math.round(r*(0.55+rng()*0.55));return {kind,R,r,d,name:''};}
+  return {kind:'hypo',R:96,r:36,d:30,name:''};
 }
-function currentParams(){
-  if(state.mode==='custom')return {kind:state.kind,R:+$('R').value,r:+$('r').value,d:+$('d').value};
-  if(state.mode==='preset'){const p=PRESETS[state.preset];return {kind:p.kind,R:p.R,r:p.r,d:p.d};}
-  return null;
+/* 依張數、格數補齊每一格；已存在的格子保留不動 */
+function buildPages(randomAll){
+  const c=cfg();const n=c.layout;const first=state.pages[0]&&state.pages[0][0]?state.pages[0][0]:pick(PRESETS[5]);
+  for(let i=0;i<c.count;i++){const old=state.pages[i]||[];const cells=[];
+    for(let j=0;j<n;j++){
+      if(!randomAll&&old[j]){cells.push(old[j]);continue;}
+      if(randomAll||(c.vary&&!(i===0&&j===0)))cells.push(randomParams(rng,state.diff));
+      else cells.push({...first});}
+    state.pages[i]=cells;}
+  state.pages.length=c.count;
+  if(state.sel.p>=c.count)state.sel.p=0;if(state.sel.c>=n)state.sel.c=0;
 }
-function regen(newSeed){
-  if(newSeed)state.seed=Math.floor(Math.random()*1e9);
-  const c=cfg();pagesData.length=0;const rng=mulberry32(state.seed);
-  for(let i=0;i<c.count;i++){
-    const cells=cellLayout(c.layout,c.size,c.nameLine);const items=[];
-    const fixed=currentParams();
-    cells.forEach((cell,j)=>{let params;
-      if(state.mode==='random')params=randomParams(rng,state.diff);
-      else if(c.layout>1&&c.vary&&j>0)params=randomParams(rng,state.diff);
-      else params=fixed;
-      items.push({params,cell});});
-    pagesData.push({svg:pageSvg(items,c,i+1,c.count),items,idx:i+1});
-  }
+function selParams(){return state.pages[state.sel.p][state.sel.c];}
+function setSel(params){state.pages[state.sel.p][state.sel.c]=pick(params);render();}
+function regen(newSeed){if(newSeed){state.seed=Math.floor(Math.random()*1e9);rng=mulberry32(state.seed);}buildPages(!!newSeed);render();}
+function randomSel(){setSel(randomParams(rng,state.diff));toast('這一格換了一朵新的花');}
+function applyAll(){const p=selParams();state.pages.forEach(pg=>pg.forEach((_,j)=>pg[j]={...p}));render();toast('已套用到全部格子');}
+
+function render(){
+  const c=cfg();pagesData.length=0;
+  state.pages.forEach((cells,i)=>{const lay=cellLayout(c.layout,c.size,c.nameLine);
+    const items=cells.map((params,j)=>({params,cell:lay[j]}));
+    pagesData.push({svg:pageSvg(items,c,i+1,c.count),items,idx:i+1});});
   const box=$('pages');box.innerHTML='';
-  pagesData.forEach((p,i)=>{const w=document.createElement('div');w.className='pagewrap';w.innerHTML=`<span class="tag">第 ${p.idx} 張</span><div class="page">${p.svg}</div>`;box.appendChild(w);});
+  pagesData.forEach((p,i)=>{const w=document.createElement('div');w.className='pagewrap';
+    let hits='';p.items.forEach((it,j)=>{const b=it.cell.box||[it.cell.cx-it.cell.size/2-4,it.cell.cy-it.cell.size/2-4,it.cell.size+8,it.cell.size+8];
+      const on=state.sel.p===i&&state.sel.c===j;
+      hits+=`<div class="cellhit${on?' sel':''}" data-p="${i}" data-c="${j}" title="點一下編輯這一格" style="left:${b[0]}mm;top:${b[1]}mm;width:${b[2]}mm;height:${b[3]}mm"><span class="badge">編輯中</span></div>`;});
+    w.innerHTML=`<span class="tag">第 ${p.idx} 張</span><div class="page">${p.svg}${hits}</div>`;box.appendChild(w);});
+  box.querySelectorAll('.cellhit').forEach(h=>h.onclick=()=>{state.sel={p:+h.dataset.p,c:+h.dataset.c};render();if(window.innerWidth<900)$('aside').classList.remove('collapsed');});
   $('pageInfo').textContent=`共 ${pagesData.length} 頁`;
-  updateInfo();applyZoom();
+  syncControls();applyZoom();
+}
+function syncControls(){
+  const p=selParams();const multi=state.layout>1||state.pages.length>1;
+  $('selLabel').textContent=(state.pages.length>1?`第 ${state.sel.p+1} 張・`:'')+(state.layout>1?`第 ${state.sel.c+1} 格`:'大圖')+(p.name?`（${p.name}）`:'');
+  $('R').value=p.R;$('r').value=p.r;$('d').value=p.d;state.kind=p.kind;
+  document.querySelectorAll('#kindSeg button').forEach(x=>x.classList.toggle('on',x.dataset.v===p.kind));
+  document.querySelectorAll('#presetGrid .pbtn').forEach((x,k)=>x.classList.toggle('active',same(PRESETS[k],p)));
+  const lib=loadLib();document.querySelectorAll('#mineGrid .pbtn').forEach((x,k)=>x.classList.toggle('active',same(lib[k],p)));
+  updateInfo();
 }
 function updateInfo(){const p={kind:state.kind,R:+$('R').value,r:+$('r').value,d:+$('d').value};const c=curve(p);$('Rv').textContent=p.R;$('rv').textContent=p.r;$('dv').textContent=p.d;
   $('info').innerHTML=`這朵花有 <b>${c.lobes} 瓣</b>，小圓要繞 <b>${c.loops} 圈</b>才回到起點。<br>花瓣數＝R÷最大公因數，圈數＝r÷最大公因數；d 越大花瓣越尖、越接近 0 越像圓。`;}
@@ -329,14 +390,33 @@ function applyZoom(){const z=+$('zoom').value/100;$('zoomVal').textContent=Math.
 
 /* ---------- 圖庫縮圖 ---------- */
 function thumb(p){const c=curve(p);const sc=20/Math.max(c.maxR,p.R);return `<svg viewBox="-22 -22 44 44"><polyline points="${c.pts.filter((_,i)=>i%2===0).map(q=>F(q[0]*sc)+','+F(q[1]*sc)).join(' ')}" fill="none" stroke="#12343B" stroke-width=".6"/></svg>`;}
-function initPresets(){const g=$('presetGrid');g.innerHTML='';PRESETS.forEach((p,i)=>{const b=document.createElement('button');b.className='pbtn'+(i===state.preset?' active':'');b.innerHTML=thumb(p)+`<span>${p.name}</span>`;b.onclick=()=>{state.preset=i;document.querySelectorAll('.pbtn').forEach((x,k)=>x.classList.toggle('active',k===i));$('R').value=p.R;$('r').value=p.r;$('d').value=p.d;state.kind=p.kind;document.querySelectorAll('#kindSeg button').forEach(x=>x.classList.toggle('on',x.dataset.v===p.kind));regen();};g.appendChild(b);});}
+function initPresets(){const g=$('presetGrid');g.innerHTML='';PRESETS.forEach((p,i)=>{const b=document.createElement('button');b.className='pbtn';b.innerHTML=thumb(p)+`<span>${p.name}</span>`;b.onclick=()=>setSel(p);g.appendChild(b);});}
+
+/* ---------- 我的圖庫（存在瀏覽器，可匯出／匯入） ---------- */
+const LIBKEY='spirograph-my-library-v1';
+function loadLib(){try{const a=JSON.parse(localStorage.getItem(LIBKEY)||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
+function storeLib(a){try{localStorage.setItem(LIBKEY,JSON.stringify(a));return true;}catch(e){toast('這個瀏覽器無法存檔，請改用「匯出備份」保存');return false;}}
+function renderLib(){const lib=loadLib();const g=$('mineGrid');g.innerHTML='';$('mineEmpty').style.display=lib.length?'none':'block';
+  lib.forEach((p,i)=>{const b=document.createElement('button');b.className='pbtn';b.innerHTML=thumb(p)+`<span>${esc(p.name||('我的 '+(i+1)))}</span><span class="del" title="刪除">×</span>`;
+    b.onclick=e=>{if(e.target.classList.contains('del')){e.stopPropagation();const a=loadLib();const nm=a[i].name||('我的 '+(i+1));a.splice(i,1);storeLib(a);renderLib();syncControls();toast(`已刪除「${nm}」`);return;}setSel(p);};
+    g.appendChild(b);});}
+function saveToLib(){const p=selParams();const lib=loadLib();
+  if(lib.some(x=>same(x,p))){toast('這朵花已經在我的圖庫裡了');return;}
+  const name=($('saveName').value.trim()||`我的花 ${lib.length+1}`).slice(0,16);
+  lib.push({...pick(p),name});if(storeLib(lib)){state.pages[state.sel.p][state.sel.c].name=name;$('saveName').value='';renderLib();syncControls();toast(`已存到我的圖庫：${name}（共 ${lib.length} 朵）`);}}
+function exportLib(){const lib=loadLib();if(!lib.length){toast('我的圖庫還是空的');return;}
+  const blob=new Blob([JSON.stringify({app:'spirograph-generator',version:1,items:lib},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`我的繁花圖庫_${lib.length}朵.json`;a.click();toast(`已匯出 ${lib.length} 朵花`);}
+function importLib(file){const fr=new FileReader();fr.onload=()=>{try{const d=JSON.parse(fr.result);const items=(Array.isArray(d)?d:d.items||[]).filter(x=>x&&(x.kind==='hypo'||x.kind==='epi')&&+x.R>0&&+x.r>0&&+x.d>0).map(pick);
+    const lib=loadLib();let add=0;items.forEach(x=>{if(!lib.some(y=>same(x,y))){lib.push(x);add++;}});storeLib(lib);renderLib();syncControls();toast(`匯入完成：新增 ${add} 朵，共 ${lib.length} 朵`);}
+  catch(e){toast('檔案格式不對，請選擇從這裡匯出的備份檔');}};fr.readAsText(file);}
 
 /* ---------- 動畫示範 ---------- */
 let anim={run:false,t:0,raf:0};
 function openAnim(){$('modal').classList.add('show');restartAnim();}
 function closeAnim(){$('modal').classList.remove('show');anim.run=false;cancelAnimationFrame(anim.raf);}
 function toggleAnim(){anim.run=!anim.run;$('playBtn').textContent=anim.run?'暫停':'播放';if(anim.run)loop();}
-function restartAnim(){anim.t=0;anim.run=true;$('playBtn').textContent='暫停';const it=pagesData[0].items[0];anim.p=it.params;anim.c=curve(it.params);anim.trail=[];cancelAnimationFrame(anim.raf);loop();}
+function restartAnim(){anim.t=0;anim.run=true;$('playBtn').textContent='暫停';const sp0=selParams();anim.p=sp0;anim.c=curve(sp0);anim.trail=[];cancelAnimationFrame(anim.raf);loop();}
 function loop(){if(!anim.run)return;const cv=$('animCv'),ctx=cv.getContext('2d');const W=cv.width,cx=W/2,cy=W/2;const p=anim.p,c=anim.c;
   const sc=(W*0.42)/Math.max(c.maxR,p.R+(p.kind==='epi'?p.r:0));const k=p.kind==='hypo'?(p.R-p.r)/p.r:(p.R+p.r)/p.r;const a=p.kind==='hypo'?p.R-p.r:p.R+p.r;
   const T=2*Math.PI*c.loops;const sp=+$('speed').value;anim.t=Math.min(T,anim.t+0.004*sp*Math.max(1,c.loops/3));
@@ -382,17 +462,20 @@ async function downloadPPT(){const btn=$('pptBtn');btn.disabled=true;btn.textCon
   btn.disabled=false;btn.textContent='下載 PPT';}
 
 /* ---------- 綁定 ---------- */
-initPresets();
+initPresets();renderLib();
 function seg(id,fn){document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on',x===b));fn(b.dataset.v);});}
-seg('modeSeg',v=>{state.mode=v;$('presetBox').style.display=v==='preset'?'block':'none';$('randomBox').classList.toggle('show',v==='random');$('customBox').classList.toggle('show',v==='custom');regen(v==='random');});
-seg('diffSeg',v=>{state.diff=+v;regen(true);});
-seg('kindSeg',v=>{state.kind=v;regen();});
-seg('styleSeg',v=>{state.style=v;regen();});
-seg('layoutSeg',v=>{state.layout=+v;regen();});
-['R','r','d','size','sw','layers','palette','ring','title','subtitle','nameLine','footer','count','vary'].forEach(id=>$(id).addEventListener('input',()=>{$('sizeVal').textContent=$('size').value+' mm';$('swv').textContent=['','極細','細','中','粗','極粗'][+$('sw').value];regen();}));
+seg('tabSeg',v=>{state.tab=v;$('presetBox').style.display=v==='preset'?'block':'none';$('mineBox').classList.toggle('show',v==='mine');$('customBox').classList.toggle('show',v==='custom');if(v==='mine')renderLib(),syncControls();});
+seg('diffSeg',v=>{state.diff=+v;});
+seg('kindSeg',v=>{state.kind=v;setSel({kind:v,R:+$('R').value,r:+$('r').value,d:+$('d').value});});
+seg('styleSeg',v=>{state.style=v;render();});
+seg('layoutSeg',v=>{state.layout=+v;buildPages(false);render();});
+['R','r','d'].forEach(id=>$(id).addEventListener('input',()=>setSel({kind:state.kind,R:+$('R').value,r:+$('r').value,d:+$('d').value})));
+['size','sw','layers','palette','ring','title','subtitle','nameLine','footer'].forEach(id=>$(id).addEventListener('input',()=>{$('sizeVal').textContent=$('size').value+' mm';$('swv').textContent=['','極細','細','中','粗','極粗'][+$('sw').value];render();}));
+$('count').addEventListener('input',()=>{buildPages(false);render();});
+$('importFile').addEventListener('change',e=>{if(e.target.files[0])importLib(e.target.files[0]);e.target.value='';});
 $('zoom').addEventListener('input',applyZoom);
 if(window.innerWidth<900){$('zoom').value=Math.min(60,Math.floor((window.innerWidth-50)/(210*3.7795)*100));$('aside').classList.add('collapsed');}
-regen();
+buildPages(false);render();
 </script>
 </body>
 </html>
